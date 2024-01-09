@@ -1,0 +1,66 @@
+import { ListView , Button, StandardButton, LineEdit, StandardTableView, HorizontalBox, VerticalBox} from "std-widgets.slint";
+export component MainWindow inherits Window {
+    background: #313e50;
+    callback show-popup();
+    title: "MediaHubSync";
+ 
+    GridLayout {
+        padding: 50px;
+        spacing: 15px;
+        Row {
+            Text {
+                text: "MediaHubSync";
+                horizontal-alignment: center;
+                font-size: 24px;
+                font-weight: 900;
+                color: white;
+            }
+        }
+        Row {
+            StandardTableView  {
+               // width: 230px;
+                height: 180px;
+                columns: [
+                    { title: "System Path" },
+                    { title: "Server Path" }
+                ];
+
+                rows: [
+                    [ { text: "D:/Games" }, { text: "/Titoot/Games" },  ],
+                    [ { text: "D:/Games" }, { text: "/Titoot/Games" },  ],
+                    [ { text: "D:/Games" }, { text: "/Titoot/Games" },  ],
+                    [ { text: "D:/Games" }, { text: "/Titoot/Games" },  ],
+                    [ { text: "D:/Games" }, { text: "/Titoot/Games" },  ],
+                ];
+            }
+        }
+
+        Row {
+            HorizontalBox {
+                width: 380px;
+                height: 40px;
+                
+                LineEdit {
+                    font-size: 14px;
+                    width: parent.width / 2;
+                    height: parent.height;
+                    placeholder-text: "Enter System Path here";
+                }
+                
+                LineEdit {
+                    font-size: 14px;
+                    width: parent.width / 2;
+                    height: parent.height;
+                    placeholder-text: "Enter Server Path here";
+                }
+            }
+        }
+        Row {
+            Button {
+                text: "Add New Path";
+                height: 50px;
+                //clicked => {popup.show();}
+            }
+        }
+    }
+}

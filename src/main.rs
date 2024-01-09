@@ -5,10 +5,12 @@ mod config;
 mod watcher;
 mod requests;
 
-
 lazy_static! {
    static ref CONFIG: Mutex<config::MyConfig> = Mutex::new(config::read_config().unwrap());
 }
+
+
+slint::include_modules!();
 
 #[tokio::main]
 async fn main() {
@@ -32,4 +34,15 @@ async fn main() {
     }
 
     futures::future::join_all(tasks).await;
+
+    let ui = MainWindow::new().unwrap();
+
+    // let ui_handle = ui.as_weak();
+    // ui.on_show_popup(move || {
+    //     let ui = ui_handle.unwrap();
+    // });
+
+    ui.run();
+
+
 }
