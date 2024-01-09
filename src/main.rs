@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 use lazy_static::lazy_static;
 use tokio::runtime::Runtime;
 use std::sync::{Mutex, Arc};
