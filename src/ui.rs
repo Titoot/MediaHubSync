@@ -15,8 +15,8 @@ pub struct MyApp {
 
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        let mut show_popup = self.popup;
         if self.popup {
-            let mut show_popup = true;
             egui::Window::new("New Entry")
             .open(&mut show_popup)
             .fixed_pos(Pos2::new(330.0/4.0, 500.0/4.0))
@@ -54,15 +54,18 @@ impl eframe::App for MyApp {
                 ui.add_space(15.0);
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
                     if ui.button("Save").clicked() {
-                        config::append_path(HashMap::from([(self.server_path.to_string(), self.system_path.to_string())]));
-                        println!("{}\n{}", self.system_path, self.server_path);
-                        self.popup = false;
-                        self.server_path = String::from("");
-                        self.system_path = String::from("");
+                        if self.system_path != String::from("") && self.server_path != String::from("")
+                        {
+                            config::append_path(HashMap::from([(self.server_path.to_string(), self.system_path.to_string())]));
+                            println!("{}\n{}", self.system_path, self.server_path);
+                            self.popup = false;
+                            self.server_path = String::from("");
+                            self.system_path = String::from("");
+                        }
                     }
                 });
             });
-            show_popup = self.popup;
+            self.popup = show_popup;
     }
 
         egui::CentralPanel::default().show(ctx, |ui: &mut egui::Ui| {
