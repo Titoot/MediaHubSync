@@ -6,11 +6,17 @@ use egui_extras::{Column, TableBuilder};
 use crate::CONFIG;
 use crate::config;
 
-#[derive(Default)]
 pub struct MyApp {
     system_path: String,
     server_path: String,
+    jwt: String,
     popup: bool
+}
+
+impl Default for MyApp {
+    fn default() -> Self {
+        Self { system_path: String::new(), server_path: String::new(), jwt: CONFIG.lock().unwrap().jwt.clone(), popup: false }
+    }
 }
 
 impl eframe::App for MyApp {
@@ -70,7 +76,7 @@ impl eframe::App for MyApp {
 
         egui::CentralPanel::default().show(ctx, |ui: &mut egui::Ui| {
             ui.vertical_centered(|ui| {
-                ui.label(RichText::new("MediaSubSync").font(FontId::proportional(26.0)));
+                ui.label(RichText::new("MediaHubSync").font(FontId::proportional(26.0)));
 
                 ui.add_space(15.0);
 
@@ -81,7 +87,7 @@ impl eframe::App for MyApp {
                                 .column(Column::auto())
                                 .column(Column::auto())
                                 .column(Column::initial(100.0).range(40.0..=300.0))
-                                .column(Column::initial(100.0).at_least(40.0).clip(true))
+                                .column(Column::initial(0.0).at_least(25.0).clip(true))
                                 .column(Column::remainder())
                                 .min_scrolled_height(0.0)
                                 .max_scroll_height(130.0);
@@ -97,10 +103,15 @@ impl eframe::App for MyApp {
                         header.col(|ui| {
                                 ui.strong("System Path");
                         });
+                        header.col(|ui| {
+                            ui.strong("Del");
+                    });
                     })
                     .body(|mut body| {
                         let mut row_index = 1;
-                        for path in &CONFIG.lock().unwrap().paths {
+                        let mut config = &mut *CONFIG.lock().unwrap();
+                        let paths_clone = config.paths.clone();
+                        for path in &paths_clone {
                             for (key, value) in path {
                                 let row_height = 18.0;
                                 body.row(row_height, |mut row| {
@@ -112,6 +123,13 @@ impl eframe::App for MyApp {
                                 });
                                    row.col(|ui| {
                                        ui.add(egui::Label::new(value).truncate(true));
+                                   });
+                                   row.col(|ui| {
+                                       if ui.add(egui::Button::image(egui::include_image!("../data/delete.png")).small()).clicked() 
+                                       {
+                                            config::delete_path(&mut *config,key.to_string());
+                                            log::debug!("{} deleted", key);
+                                       }
                                    });
                                 });
                                 row_index += 1;
@@ -125,12 +143,30 @@ impl eframe::App for MyApp {
             ui.vertical_centered(|ui| {
 
                 if ui.add(egui::Button::new("Add New Entry").min_size([150.0, 0.0].into())).clicked() {
-                        println!("{}", self.server_path);
+                    log::debug!("{}", self.server_path);
                         self.popup = true;
 
                 }
             });
+
+            ui.add_space(35.0);
+
+            ui.label("JWT Token");
+            ui.horizontal(|ui| {
+            ui.add(
+                egui::TextEdit::singleline(&mut self.jwt)
+                    .desired_width(150.0)
+                    .hint_text("Jwt Token"),
+            );
+            if ui.button("Save").clicked() {
+                if self.jwt != String::from("")
+                {
+                    config::set_jwt(self.jwt.to_string());
+                    log::debug!("{}", self.jwt);
+                }
+            }
         });
+    });
     }
 }
 
