@@ -19,3 +19,5 @@ rfd = "0.12.1"
 serde = "1.0.195"
 serde_json = "1.0.111"
 tokio = {version="1.35.1", features = ["full"] }
+widestring = "1.0.2"
+win-msgbox = "0.1.2"

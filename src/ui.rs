@@ -2,6 +2,8 @@ use std::collections::HashMap;
 
 use eframe::{egui::{self, RichText, FontId}, epaint::Pos2};
 use egui_extras::{Column, TableBuilder};
+use win_msgbox::Okay;
+use widestring::U16CString;
 
 use crate::CONFIG;
 use crate::config;
@@ -60,13 +62,22 @@ impl eframe::App for MyApp {
                 ui.add_space(15.0);
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
                     if ui.button("Save").clicked() {
-                        if self.system_path != String::from("") && self.server_path != String::from("")
+                        if config::check_path(&CONFIG.lock().unwrap(), self.server_path.to_string(), self.system_path.to_string()) {
+                            let message = U16CString::from_str("Can't put duplicate Paths").unwrap();
+                            let _ = win_msgbox::error::<Okay>(message.as_ptr()).show().unwrap();
+                            return;
+                        }
+                        if self.system_path != String::from("") || self.server_path != String::from("")
                         {
                             config::append_path(HashMap::from([(self.server_path.to_string(), self.system_path.to_string())]));
                             println!("{}\n{}", self.system_path, self.server_path);
                             self.popup = false;
                             self.server_path = String::from("");
                             self.system_path = String::from("");
+                        }
+                        else {
+                            let message = U16CString::from_str("Can't put empty Paths").unwrap();
+                            let _ = win_msgbox::error::<Okay>(message.as_ptr()).show().unwrap();
                         }
                     }
                 });
@@ -109,7 +120,7 @@ impl eframe::App for MyApp {
                     })
                     .body(|mut body| {
                         let mut row_index = 1;
-                        let mut config = &mut *CONFIG.lock().unwrap();
+                        let config = &mut *CONFIG.lock().unwrap();
                         let paths_clone = config.paths.clone();
                         for path in &paths_clone {
                             for (key, value) in path {

@@ -72,3 +72,12 @@ pub fn delete_path(config: &mut MyConfig, key: String, value: String) {
     let mut file = File::create(CONFIG_PATH).unwrap();
     file.write_all(updated_config_json.as_bytes()).unwrap();
 }
+
+pub fn check_path(config: &MyConfig, key: String, value: String) -> bool {
+    for path in &config.paths {
+        if path.contains_key(&key) && path.get(&key) == Some(&value) {
+            return true;
+        }
+    }
+    false
+}
