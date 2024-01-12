@@ -50,4 +50,22 @@ pub fn append_path(new_path: HashMap<String, String>) {
  
     let mut file = File::create(CONFIG_PATH).unwrap();
     file.write_all(updated_config_json.as_bytes()).unwrap();
- }
+}
+
+pub fn set_jwt(new_jwt: String) {
+    CONFIG.lock().unwrap().jwt = new_jwt;
+ 
+    let updated_config_json = serde_json::to_string(&*CONFIG.lock().unwrap()).unwrap();
+ 
+    let mut file = File::create(CONFIG_PATH).unwrap();
+    file.write_all(updated_config_json.as_bytes()).unwrap();
+}
+
+pub fn delete_path(config: &mut MyConfig, key: String) {
+    config.paths.retain(|path| !path.contains_key(&key));
+ 
+    let updated_config_json = serde_json::to_string(&*config).unwrap();
+ 
+    let mut file = File::create(CONFIG_PATH).unwrap();
+    file.write_all(updated_config_json.as_bytes()).unwrap();
+}

@@ -49,10 +49,14 @@ async fn main() {
     println!("JWT: {}",  CONFIG.lock().unwrap().jwt);
     
     let win_option = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default().with_inner_size([330.0, 500.0]).with_resizable(false),
+        viewport: egui::ViewportBuilder::default().with_inner_size([363.0, 500.0]).with_resizable(true),
         ..Default::default()
     };
-    let _ = eframe::run_native("MediaSubSync", win_option, Box::new(|_cc| Box::<ui::MyApp>::default()));
+    let _ = eframe::run_native("MediaHubSync", win_option, Box::new(|cc| {
+        egui_extras::install_image_loaders(&cc.egui_ctx);
+
+        Box::<ui::MyApp>::default()
+    }));
 
 
 
