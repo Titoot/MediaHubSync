@@ -127,7 +127,7 @@ impl eframe::App for MyApp {
                                    row.col(|ui| {
                                        if ui.add(egui::Button::image(egui::include_image!("../data/delete.png")).small()).clicked() 
                                        {
-                                            config::delete_path(&mut *config,key.to_string());
+                                            config::delete_path(&mut *config,key.to_string(), value.to_string());
                                             log::debug!("{} deleted", key);
                                        }
                                    });

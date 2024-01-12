@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use serde::de::value;
 use serde::{Deserialize, Serialize};
 use config::{Config, File as ConfigFile};
 
@@ -61,8 +62,10 @@ pub fn set_jwt(new_jwt: String) {
     file.write_all(updated_config_json.as_bytes()).unwrap();
 }
 
-pub fn delete_path(config: &mut MyConfig, key: String) {
-    config.paths.retain(|path| !path.contains_key(&key));
+pub fn delete_path(config: &mut MyConfig, key: String, value: String) {
+    config.paths.retain(|path| {
+        path.get(&key) != Some(&value)
+    });
  
     let updated_config_json = serde_json::to_string(&*config).unwrap();
  
