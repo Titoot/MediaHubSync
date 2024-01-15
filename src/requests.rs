@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::collections::HashMap;
 use fs_extra::dir::get_size;
 
@@ -6,7 +7,7 @@ use win_msgbox::Okay;
 
 use crate::CONFIG;
 
-pub async fn sync(path: &str, srv_path: &str, folder_type: &str) {
+pub async fn sync(path: &str, srv_path: &str, file_type: &str) {
     let api_url = CONFIG.lock().unwrap().api_url.clone();
     if api_url.is_empty() {
         log::error!("api url not found in config file");
@@ -17,14 +18,14 @@ pub async fn sync(path: &str, srv_path: &str, folder_type: &str) {
     let size = get_size(path).unwrap();
     log::debug!("Fize Size: {}", size);
     let json = &serde_json::json!({
-            "path": path,
+            "path": Path::new(path).file_name(),
             "srvPath": srv_path,
             "size": size,
-            "folder_type": folder_type,
+            "file_type": file_type,
     });
 
     let client = reqwest::Client::new();
-    let res = client.post(format!("https://{}/", api_url))
+    let res = client.post(format!("https://{}/folderSync", api_url))
         .header("Authorization", format!("Bearer {}",  CONFIG.lock().unwrap().jwt))
         .json(json)
         .send()
