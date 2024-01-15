@@ -27,7 +27,8 @@ async fn watch(path: &config::Path) -> notify::Result<()> {
             Ok(event) => {
                 if event.kind == EventKind::Modify(ModifyKind::Any) || event.kind == EventKind::Modify(ModifyKind::Name(RenameMode::To)) || EventKind::is_remove(&event.kind) {
                     log::info!("Change: {0:?}", event.paths[0]);
-                    requests::sync(event.paths[0].to_str().unwrap(), &path.srv_path, &path.folder_type).await;
+                    let npath = config::Path::from((event.paths[0].to_str().unwrap().to_string(), path.srv_path.clone(), path.folder_type.clone()));
+                    requests::sync(vec![npath]).await;
                 }
             },
             Err(error) => log::error!("Error: {error:?}"),
