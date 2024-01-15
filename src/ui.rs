@@ -48,7 +48,7 @@ impl eframe::App for MyApp {
                                 let last_two_components = get_last_two_components(&path);
                 
                                 self.system_path = path.to_string_lossy().to_string();
-                                println!("{}", last_two_components);
+                                log::debug!("{}", last_two_components);
                             }
                         }
                     });
@@ -70,7 +70,7 @@ impl eframe::App for MyApp {
                         if self.system_path != String::from("") || self.server_path != String::from("")
                         {
                             config::append_path(HashMap::from([(self.server_path.to_string(), self.system_path.to_string())]));
-                            println!("{}\n{}", self.system_path, self.server_path);
+                            log::debug!("{}\n{}", self.system_path, self.server_path);
                             self.popup = false;
                             self.server_path = String::from("");
                             self.system_path = String::from("");
@@ -154,9 +154,7 @@ impl eframe::App for MyApp {
             ui.vertical_centered(|ui| {
 
                 if ui.add(egui::Button::new("Add New Entry").min_size([150.0, 0.0].into())).clicked() {
-                    log::debug!("{}", self.server_path);
-                        self.popup = true;
-
+                    self.popup = true;
                 }
             });
 

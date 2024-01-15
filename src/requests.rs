@@ -19,10 +19,10 @@ pub async fn sync(path: &str, srv_path: &str) {
         Ok(res) => {
             let json_result: Result<HashMap<String, String>, _> = res.json().await;
             match json_result {
-                Ok(json_value) => println!("{:?}", json_value),
-                Err(e) => println!("Failed to deserialize JSON: {}", e),
+                Ok(json_value) => log::info!("{:?}", json_value),
+                Err(e) => log::error!("Failed to deserialize JSON: {}", e),
             }
         },
-        Err(e) => println!("Failed to send request: {}", e),
+        Err(e) => log::error!("Failed to send request: {}", e),
     }
 }
