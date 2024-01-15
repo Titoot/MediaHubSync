@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use eframe::{egui::{self, RichText, FontId}, epaint::Pos2};
 use egui_extras::{Column, TableBuilder};
 use win_msgbox::Okay;
@@ -10,9 +8,9 @@ use crate::config;
 
 #[derive(Debug, PartialEq)]
 enum Enum {
-    Games,
+    Game,
     Series,
-    Movies,
+    Movie,
     Anime
 }
 
@@ -26,7 +24,7 @@ pub struct MyApp {
 
 impl Default for MyApp {
     fn default() -> Self {
-        Self { system_path: String::new(), server_path: String::new(), jwt: CONFIG.lock().unwrap().jwt.clone(), popup: false, folder_type: Enum::Games }
+        Self { system_path: String::new(), server_path: String::new(), jwt: CONFIG.lock().unwrap().jwt.clone(), popup: false, folder_type: Enum::Game }
     }
 }
 
@@ -72,8 +70,8 @@ impl eframe::App for MyApp {
                 egui::ComboBox::from_label("Select one!")
                 .selected_text(format!("{:?}", self.folder_type))
                 .show_ui(ui, |ui| {
-                    ui.selectable_value(&mut self.folder_type, Enum::Games, "Games");
-                    ui.selectable_value(&mut self.folder_type, Enum::Movies, "Movies");
+                    ui.selectable_value(&mut self.folder_type, Enum::Game, "Game");
+                    ui.selectable_value(&mut self.folder_type, Enum::Movie, "Movie");
                     ui.selectable_value(&mut self.folder_type, Enum::Series, "Series");
                     ui.selectable_value(&mut self.folder_type, Enum::Anime, "Anime");
                 });
