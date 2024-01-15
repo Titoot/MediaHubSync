@@ -24,7 +24,7 @@ async fn main() {
 
     let rt = Runtime::new().unwrap();
     let rt = Arc::new(Mutex::new(rt));
-    
+
     let rt_clone = Arc::clone(&rt);
     std::thread::spawn(move || {
         let rt = rt_clone.lock().unwrap();
@@ -32,14 +32,10 @@ async fn main() {
             let mut tasks = vec![];
             let paths = CONFIG.lock().unwrap().paths.clone();
             for path in paths {
-
-                    log::info!("Path: {} -> SrvPath: {}", path.path, path.srv_path);
-
-                    let task = tokio::spawn(async move { watcher::watch_chunk(&path).await });
-                    tasks.push(task);
-
+                log::info!("Path: {} -> SrvPath: {}", path.path, path.srv_path);
+                let task = tokio::spawn(async move { watcher::watch_chunk(&path).await });
+                tasks.push(task);
             }
-        
             futures::future::join_all(tasks).await;
         });
     });
