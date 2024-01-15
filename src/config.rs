@@ -7,7 +7,7 @@ use win_msgbox::Okay;
 use std::fs::File;
 use std::io::Write;
 
-use crate::CONFIG;
+use crate::{CONFIG, requests};
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Path {
@@ -24,26 +24,23 @@ pub struct MyConfig {
 }
 
 impl Path {
-    fn new() -> Self {
-        Self {
-            path: String::new(),
-            srv_path: String::new(),
-            folder_type: String::new(),
-        }
-    }
- }
-
- impl From<(String, String, String)> for Path {
-    fn from((path, srv_path, folder_type): (String, String, String)) -> Self {
+    // pub fn new() -> Self {
+    //     Self {
+    //         path: String::new(),
+    //         srv_path: String::new(),
+    //         folder_type: String::new(),
+    //     }
+    // }
+    pub fn from((path, srv_path, folder_type): (String, String, String)) -> Self {
         Self {
             path,
             srv_path,
             folder_type,
         }
     }
- }
- 
- impl MyConfig {
+}
+
+impl MyConfig {
     fn new() -> Self {
         Self {
             api_url: String::new(),
@@ -51,7 +48,7 @@ impl Path {
             paths: Vec::new(),
         }
     }
- }
+}
 const CONFIG_PATH: &str = "config.json";
 pub fn read_config() -> Result<MyConfig, Box<dyn std::error::Error>> {
 
@@ -87,12 +84,16 @@ pub fn read_config() -> Result<MyConfig, Box<dyn std::error::Error>> {
 }
 
 pub fn append_path(new_path: Path) {
-    CONFIG.lock().unwrap().paths.push(new_path);
+    CONFIG.lock().unwrap().paths.push(new_path.clone());
  
     let updated_config_json = serde_json::to_string(&*CONFIG.lock().unwrap()).unwrap();
  
     let mut file = File::create(CONFIG_PATH).unwrap();
     file.write_all(updated_config_json.as_bytes()).unwrap();
+
+    tokio::spawn(async move {
+        requests::sync_all(new_path).await;
+    });
 }
 
 pub fn set_jwt(new_jwt: String) {
@@ -104,9 +105,9 @@ pub fn set_jwt(new_jwt: String) {
     file.write_all(updated_config_json.as_bytes()).unwrap();
 }
 
-pub fn delete_path(config: &mut MyConfig, key: String, value: String) {
+pub fn delete_path(config: &mut MyConfig, srv_path: String, inpath: String) {
     config.paths.retain(|path| {
-        !(path.path == key && path.srv_path == value)
+        !(path.srv_path == srv_path && path.path == inpath)
     });
   
     let updated_config_json = serde_json::to_string(&*config).unwrap();
@@ -115,9 +116,9 @@ pub fn delete_path(config: &mut MyConfig, key: String, value: String) {
     file.write_all(updated_config_json.as_bytes()).unwrap();
  }
  
- pub fn check_path(config: &MyConfig, key: String, value: String) -> bool {
+ pub fn check_path(config: &MyConfig, srv_path: String, inpath: String) -> bool {
     for path in &config.paths {
-        if path.path == key && path.srv_path == value {
+        if path.srv_path == srv_path && path.path == inpath {
             return true;
         }
     }
