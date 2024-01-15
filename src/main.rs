@@ -35,7 +35,7 @@ async fn main() {
 
                     log::info!("Path: {} -> SrvPath: {}", path.path, path.srv_path);
 
-                    let task = tokio::spawn(async move { watcher::watch_chunk(&path.path, &path.srv_path).await });
+                    let task = tokio::spawn(async move { watcher::watch_chunk(&path).await });
                     tasks.push(task);
 
             }

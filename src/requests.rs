@@ -6,7 +6,7 @@ use win_msgbox::Okay;
 
 use crate::CONFIG;
 
-pub async fn sync(path: &str, srv_path: &str) {
+pub async fn sync(path: &str, srv_path: &str, folder_type: &str) {
     let api_url = CONFIG.lock().unwrap().api_url.clone();
     if api_url.is_empty() {
         log::error!("api url not found in config file");
@@ -20,6 +20,7 @@ pub async fn sync(path: &str, srv_path: &str) {
             "path": path,
             "srvPath": srv_path,
             "size": size,
+            "folder_type": folder_type,
     });
 
     let client = reqwest::Client::new();
