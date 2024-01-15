@@ -5,19 +5,28 @@ use egui_extras::{Column, TableBuilder};
 use win_msgbox::Okay;
 use widestring::U16CString;
 
-use crate::CONFIG;
+use crate::{CONFIG, config::Path};
 use crate::config;
+
+#[derive(Debug, PartialEq)]
+enum Enum {
+    Games,
+    Series,
+    Movies,
+    Anime
+}
 
 pub struct MyApp {
     system_path: String,
     server_path: String,
     jwt: String,
-    popup: bool
+    popup: bool,
+    folder_type: crate::ui::Enum,
 }
 
 impl Default for MyApp {
     fn default() -> Self {
-        Self { system_path: String::new(), server_path: String::new(), jwt: CONFIG.lock().unwrap().jwt.clone(), popup: false }
+        Self { system_path: String::new(), server_path: String::new(), jwt: CONFIG.lock().unwrap().jwt.clone(), popup: false, folder_type: Enum::Games }
     }
 }
 
@@ -59,6 +68,16 @@ impl eframe::App for MyApp {
                         .desired_width(150.0)
                         .hint_text("Add Server Path"),
                 );
+
+                egui::ComboBox::from_label("Select one!")
+                .selected_text(format!("{:?}", self.folder_type))
+                .show_ui(ui, |ui| {
+                    ui.selectable_value(&mut self.folder_type, Enum::Games, "Games");
+                    ui.selectable_value(&mut self.folder_type, Enum::Movies, "Movies");
+                    ui.selectable_value(&mut self.folder_type, Enum::Series, "Series");
+                    ui.selectable_value(&mut self.folder_type, Enum::Anime, "Anime");
+                });
+
                 ui.add_space(15.0);
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
                     if ui.button("Save").clicked() {
@@ -67,9 +86,9 @@ impl eframe::App for MyApp {
                             let _ = win_msgbox::error::<Okay>(message.as_ptr()).show().unwrap();
                             return;
                         }
-                        if self.system_path != String::from("") || self.server_path != String::from("")
+                        if !self.system_path.is_empty() && !self.server_path.is_empty()
                         {
-                            config::append_path(HashMap::from([(self.server_path.to_string(), self.system_path.to_string())]));
+                            config::append_path(Path::from((self.system_path.to_string(), self.server_path.to_string(), format!("{:?}", self.folder_type))));
                             log::debug!("{}\n{}", self.system_path, self.server_path);
                             self.popup = false;
                             self.server_path = String::from("");
@@ -121,30 +140,28 @@ impl eframe::App for MyApp {
                     .body(|mut body| {
                         let mut row_index = 1;
                         let config = &mut *CONFIG.lock().unwrap();
-                        let paths_clone = config.paths.clone();
-                        for path in &paths_clone {
-                            for (key, value) in path {
+                        let paths = config.paths.clone();
+                        for path in &paths {
                                 let row_height = 18.0;
                                 body.row(row_height, |mut row| {
                                    row.col(|ui| {
                                        ui.label(row_index.to_string());
                                    });
                                    row.col(|ui| {
-                                    ui.add(egui::Label::new(key).truncate(true));
+                                    ui.add(egui::Label::new(&path.srv_path).truncate(true));
                                 });
                                    row.col(|ui| {
-                                       ui.add(egui::Label::new(value).truncate(true));
+                                       ui.add(egui::Label::new(&path.path).truncate(true));
                                    });
                                    row.col(|ui| {
                                        if ui.add(egui::Button::image(egui::include_image!("../data/delete.png")).small()).clicked() 
                                        {
-                                            config::delete_path(&mut *config,key.to_string(), value.to_string());
-                                            log::debug!("{} deleted", key);
+                                            config::delete_path(&mut *config,path.srv_path.to_string(), path.path.to_string());
+                                            log::debug!("{} deleted", path.srv_path);
                                        }
                                    });
                                 });
                                 row_index += 1;
-                            }
                         }
                     });
                 });
@@ -181,7 +198,10 @@ impl eframe::App for MyApp {
 
 fn get_last_two_components(path: &std::path::PathBuf) -> String {
     if let (Some(parent), Some(file_name)) = (path.parent(), path.file_name()) {
-        let parent_str = parent.file_name().unwrap().to_string_lossy();
+        let parent_str = match parent.file_name() {
+            Some(file_name) => file_name.to_string_lossy(),
+            None => return file_name.to_string_lossy().to_string(),
+         };
         let file_name_str = file_name.to_string_lossy();
         return format!("\\{}\\{}", parent_str, file_name_str);
     }

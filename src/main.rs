@@ -30,15 +30,14 @@ async fn main() {
         let rt = rt_clone.lock().unwrap();
         rt.block_on(async {
             let mut tasks = vec![];
-            for path_map in &CONFIG.lock().unwrap().paths {
-                for (key, value) in path_map {
-                    log::info!("Path: {} -> Value: {}", key, value);
-        
-                    let key = key.clone();
-                    let value = value.clone();
-                    let task = tokio::spawn(async move { watcher::watch_chunk(&key, &value).await });
+            let paths = CONFIG.lock().unwrap().paths.clone();
+            for path in paths {
+
+                    log::info!("Path: {} -> SrvPath: {}", path.path, path.srv_path);
+
+                    let task = tokio::spawn(async move { watcher::watch_chunk(&path.path, &path.srv_path).await });
                     tasks.push(task);
-                }
+
             }
         
             futures::future::join_all(tasks).await;

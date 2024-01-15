@@ -4,7 +4,7 @@ use notify::event::{EventKind, ModifyKind, RenameMode};
 
 use crate::requests;
 
-pub async fn watch_chunk(srv_path: &String, path: &String) {
+pub async fn watch_chunk(path: &String, srv_path: &String) {
     log::info!("Watching {}", path);
 
     if let Err(error) = watch(path, srv_path).await {
