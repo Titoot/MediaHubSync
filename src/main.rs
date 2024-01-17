@@ -1,4 +1,4 @@
-use std::env;
+use std::{env, process};
 use lazy_static::lazy_static;
 use tokio::runtime::Runtime;
 use std::sync::{Mutex, Arc};
@@ -15,44 +15,46 @@ lazy_static! {
 
 #[tokio::main]
 async fn main() {
-    let DEBUG: bool = env::args().any(|arg| arg == "--debug");
-    if !DEBUG {
-        hide_console_window();
-    }
-    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or(if DEBUG { "debug" } else { "info" })).init();
-    log::debug!("Running in debug mode");
+   let DEBUG: bool = env::args().any(|arg| arg == "--debug");
+   if !DEBUG {
+       hide_console_window();
+   }
+   env_logger::Builder::from_env(env_logger::Env::default().default_filter_or(if DEBUG { "debug" } else { "info" })).init();
+   log::debug!("Running in debug mode");
 
-    let rt = Runtime::new().unwrap();
-    let rt = Arc::new(Mutex::new(rt));
+   tokio::spawn(async move {
 
-    let rt_clone = Arc::clone(&rt);
-    std::thread::spawn(move || {
-        let rt = rt_clone.lock().unwrap();
-        rt.block_on(async {
-            let mut tasks = vec![];
-            let paths = CONFIG.lock().unwrap().paths.clone();
-            for path in paths {
-                log::info!("Path: {} -> SrvPath: {}", path.path, path.srv_path);
-                let task = tokio::spawn(async move { watcher::watch_chunk(&path).await });
-                tasks.push(task);
-            }
-            futures::future::join_all(tasks).await;
-        });
-    });
+        let paths = CONFIG.lock().unwrap().paths.clone();
+        let tasks: Vec<_> = paths.into_iter().map(|path| {
+            log::info!("Path: {} -> SrvPath: {}", path.path, path.srv_path);
+            tokio::spawn(async move { watcher::watch_chunk(&path).await })
+        }).collect();
 
-    log::debug!("JWT: {}",  CONFIG.lock().unwrap().jwt);
-    
-    let win_option = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default().with_inner_size([363.0, 500.0]).with_resizable(false),
-        ..Default::default()
-    };
-    let _ = eframe::run_native("MediaHubSync", win_option, Box::new(|cc| {
-        egui_extras::install_image_loaders(&cc.egui_ctx);
+       futures::future::join_all(tasks).await;
+   });
 
-        Box::<ui::MyApp>::default()
-    }));
+   log::debug!("JWT: {}", CONFIG.lock().unwrap().jwt);
+   
+   let win_option = eframe::NativeOptions {
+       viewport: egui::ViewportBuilder::default().with_inner_size([363.0, 500.0]).with_resizable(false),
+       ..Default::default()
+   };
+   let run_result = eframe::run_native("MediaHubSync", win_option, Box::new(|cc| {
+       egui_extras::install_image_loaders(&cc.egui_ctx);
+
+       Box::<ui::MyApp>::default()
+   }));
+
+   match run_result {
+       Ok(_) => {
+            log::info!("Application closed normally");
+            process::exit(0);
+        },
+       Err(e) => log::info!("Application closed with error: {:?}", e),
+   }
 
 }
+
 
 fn hide_console_window() {
     unsafe { winapi::um::wincon::FreeConsole() };
