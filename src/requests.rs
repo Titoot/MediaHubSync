@@ -1,11 +1,28 @@
-use std::path::Path;
+use std::{path::Path, sync::Mutex};
 use fs_extra::dir::get_size;
+use lazy_static::lazy_static;
+use itertools::Itertools;
 
 use serde::{Serialize, Deserialize};
 use widestring::U16CString;
 use win_msgbox::Okay;
 
 use crate::{CONFIG, config};
+
+pub struct UiState {
+    pub(crate) is_loading: bool,
+}
+
+impl UiState {
+    pub fn set_loading(&mut self, loading: bool) {
+        self.is_loading = loading;
+    }
+}
+lazy_static! {
+    pub static ref UI_STATE: Mutex<UiState> = Mutex::new(UiState {
+        is_loading: false,
+    });
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Response {
@@ -29,6 +46,9 @@ pub async fn sync(paths: Vec<config::Path>) {
         let _ = win_msgbox::error::<Okay>(message.as_ptr()).show().unwrap();
         return;
     }
+
+    UI_STATE.lock().unwrap().set_loading(true);
+
     let mut path_infos: Vec<PathInfo> = Vec::new();
     for p in paths {
         log::debug!("path: {}", p.path);
@@ -51,6 +71,8 @@ pub async fn sync(paths: Vec<config::Path>) {
         .send()
         .await;
 
+    UI_STATE.lock().unwrap().set_loading(false);
+
     match res {
         Ok(res) => {
             log::debug!("Status Code: {}", res.status());
@@ -66,13 +88,30 @@ pub async fn sync(paths: Vec<config::Path>) {
 
 pub async fn sync_all(path: config::Path){
     let paths = std::fs::read_dir(path.path).unwrap();
-    let paths: Vec<config::Path> = paths.map(|entry| {
-        let entry = entry.unwrap();
-        config::Path {
-            path: entry.path().to_str().unwrap().to_string(),
-            srv_path: path.srv_path.clone(),
-            folder_type: path.folder_type.clone(),
+    let paths: Vec<config::Path> = paths.filter_map(|entry| {
+        let entry = match entry {
+            Ok(entry) => entry,
+            Err(_) => return None,
+        };
+        
+        let metadata = match entry.metadata() {
+            Ok(metadata) => metadata,
+            Err(_) => return None,
+        };
+        
+        if metadata.is_dir() || 
+           (metadata.is_file() && matches!(entry.path().extension(), Some(ext) if ext == "rar" || ext == "zip")) {
+            Some(config::Path {
+                path: entry.path().to_str().unwrap().to_string(),
+                srv_path: path.srv_path.clone(),
+                folder_type: path.folder_type.clone(),
+            })
+        } else {
+            None
         }
     }).collect();
+  
+    let paths: Vec<config::Path> = paths.into_iter().unique().collect();
+    
     sync(paths).await;
- }
+}

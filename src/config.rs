@@ -3,13 +3,12 @@ use config::{Config, File as ConfigFile};
 use widestring::U16CString;
 use win_msgbox::Okay;
 
-// use serde_json::{Result as serdeResult, Value};
 use std::fs::File;
 use std::io::Write;
 
 use crate::{CONFIG, requests};
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone, Hash, Eq, PartialEq)]
 pub struct Path {
    pub path: String,
    pub srv_path: String,

@@ -5,6 +5,7 @@ use widestring::U16CString;
 
 use crate::{CONFIG, config::Path};
 use crate::config;
+use crate::requests::UI_STATE;
 
 #[derive(Debug, PartialEq)]
 enum Enum {
@@ -20,11 +21,19 @@ pub struct MyApp {
     jwt: String,
     popup: bool,
     folder_type: crate::ui::Enum,
+    is_enabled: bool,
 }
 
 impl Default for MyApp {
     fn default() -> Self {
-        Self { system_path: String::new(), server_path: String::new(), jwt: CONFIG.lock().unwrap().jwt.clone(), popup: false, folder_type: Enum::Game }
+        Self { 
+            system_path: String::new(),
+            server_path: String::new(),
+            jwt: CONFIG.lock().unwrap().jwt.clone(),
+            popup: false,
+            folder_type: Enum::Game,
+            is_enabled: true,
+        }
     }
 }
 
@@ -39,6 +48,7 @@ impl eframe::App for MyApp {
             .max_size([150.0, 100.0])
             .collapsible(false)
             .show(ctx, |ui| {
+                ui.add_enabled_ui(self.is_enabled, |ui| {
                 ui.vertical_centered(|ui| {
 
                     ui.horizontal(|ui| {
@@ -80,8 +90,7 @@ impl eframe::App for MyApp {
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
                     if ui.button("Save").clicked() {
                         if config::check_path(&CONFIG.lock().unwrap(), self.server_path.to_string(), self.system_path.to_string()) {
-                            let message = U16CString::from_str("Can't put duplicate Paths").unwrap();
-                            let _ = win_msgbox::error::<Okay>(message.as_ptr()).show().unwrap();
+                            show_error_message("Can't put duplicate Paths");
                             return;
                         }
                         if !self.system_path.is_empty() && !self.server_path.is_empty()
@@ -93,16 +102,26 @@ impl eframe::App for MyApp {
                             self.system_path = String::from("");
                         }
                         else {
-                            let message = U16CString::from_str("Can't put empty Paths").unwrap();
-                            let _ = win_msgbox::error::<Okay>(message.as_ptr()).show().unwrap();
+                            show_error_message("Can't put empty Paths");
                         }
                     }
                 });
             });
+        });
             self.popup = show_popup;
+
     }
 
         egui::CentralPanel::default().show(ctx, |ui: &mut egui::Ui| {
+            let ui_state = UI_STATE.lock().unwrap();
+            self.is_enabled = !ui_state.is_loading;
+            if ui_state.is_loading {
+                ui.horizontal(|ui| {
+                    ui.label("Loading... Please wait.");
+                    ui.spinner();
+                });
+            }
+
             ui.vertical_centered(|ui| {
                 ui.label(RichText::new("MediaHubSync").font(FontId::proportional(26.0)));
 
@@ -192,6 +211,11 @@ impl eframe::App for MyApp {
         });
     });
     }
+}
+
+fn show_error_message(message: &str) {
+    let message = U16CString::from_str(message).unwrap();
+    let _ = win_msgbox::error::<Okay>(message.as_ptr()).show().unwrap();
 }
 
 fn get_last_two_components(path: &std::path::PathBuf) -> String {
