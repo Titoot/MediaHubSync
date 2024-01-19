@@ -1,7 +1,6 @@
 use std::{env, process};
 use lazy_static::lazy_static;
-use tokio::runtime::Runtime;
-use std::sync::{Mutex, Arc};
+use std::sync::Mutex;
 use eframe::egui;
 
 mod ui;
