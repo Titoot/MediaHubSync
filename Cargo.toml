@@ -16,6 +16,7 @@ itertools = "0.12.0"
 lazy_static = "1.4.0"
 log = "0.4.20"
 notify = "6.1.1"
+rayon = "1.8.1"
 reqwest = {version = "0.11.23", features = ["json"] }
 rfd = "0.13.0"
 serde = "1.0.195"
